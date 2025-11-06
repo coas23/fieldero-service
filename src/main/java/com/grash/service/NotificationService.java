@@ -9,6 +9,7 @@ import com.grash.model.Notification;
 import com.grash.model.OwnUser;
 import com.grash.model.PushNotificationToken;
 import com.grash.repository.NotificationRepository;
+import com.grash.service.expo.AuthenticatedPushServerResolver;
 import io.github.jav.exposerversdk.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -116,9 +117,7 @@ public class NotificationService {
         PushClientCustomData client = new PushClientCustomData();
         String expoAccessToken = Optional.ofNullable(System.getenv("EXPO_ACCESS_TOKEN"))
                 .orElseGet(() -> System.getProperty("EXPO_ACCESS_TOKEN", ""));
-        if (!expoAccessToken.isEmpty()) {
-            client.setAccessToken(expoAccessToken);
-        }
+        client.pushServerResolver = new AuthenticatedPushServerResolver(expoAccessToken);
         List<List<ExpoPushMessage>> chunks = client.chunkPushNotifications(expoPushMessages);
 
         List<CompletableFuture<List<ExpoPushTicket>>> messageRepliesFutures = new ArrayList<>();

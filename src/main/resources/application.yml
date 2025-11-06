@@ -64,7 +64,7 @@ spring:
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=20m
 server:
-  port: 8080 # This is the default port anyway, but you can change it here
+  port: ${PORT:8080}
 
 security:
   jwt:

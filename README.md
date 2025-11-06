@@ -26,3 +26,5 @@ mvn spring-boot:run
 
 When using Expo project-bound push tokens the backend must supply an Expo Push Access Token.
 Set `EXPO_ACCESS_TOKEN` (env or JVM property) to a valid token obtained via `npx expo push:access-token`.
+
+> Expo push notifications now use an authenticated resolver. Set the environment variable `EXPO_ACCESS_TOKEN` (e.g. via Render Secrets) so the backend can send project-scoped tokens. Tokens can be generated via `npx expo push:access-token` or in the Expo dashboard.

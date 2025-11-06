@@ -113,7 +113,12 @@ public class NotificationService {
         List<ExpoPushMessage> expoPushMessages = new ArrayList<>();
         expoPushMessages.add(expoPushMessage);
 
-        PushClient client = new PushClient();
+        PushClientCustomData client = new PushClientCustomData();
+        String expoAccessToken = Optional.ofNullable(System.getenv("EXPO_ACCESS_TOKEN"))
+                .orElseGet(() -> System.getProperty("EXPO_ACCESS_TOKEN", ""));
+        if (!expoAccessToken.isEmpty()) {
+            client.setAccessToken(expoAccessToken);
+        }
         List<List<ExpoPushMessage>> chunks = client.chunkPushNotifications(expoPushMessages);
 
         List<CompletableFuture<List<ExpoPushTicket>>> messageRepliesFutures = new ArrayList<>();
@@ -148,15 +153,17 @@ public class NotificationService {
 
         List<ExpoPushMessageTicketPair<ExpoPushMessage>> errorTicketMessages =
                 client.filterAllMessagesWithError(zippedMessagesTickets);
-        String errorTicketMessagesString = errorTicketMessages.stream().map(
-                p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
-        ).collect(Collectors.joining(","));
-        System.out.println(
-                "Recieved ERROR ticket for " +
-                        errorTicketMessages.size() +
-                        " messages: " +
-                        errorTicketMessagesString
-        );
+        if (!errorTicketMessages.isEmpty()) {
+            String errorTicketMessagesString = errorTicketMessages.stream().map(
+                    p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
+            ).collect(Collectors.joining(","));
+            System.out.println(
+                    "Recieved ERROR ticket for " +
+                            errorTicketMessages.size() +
+                            " messages: " +
+                            errorTicketMessagesString
+            );
+        }
 
 
         // TODO

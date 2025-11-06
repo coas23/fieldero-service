@@ -22,3 +22,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 1.8) \
 PATH="$JAVA_HOME/bin:$PATH" \
 mvn spring-boot:run
 ```
+## Expo Push Notifications
+
+When using Expo project-bound push tokens the backend must supply an Expo Push Access Token.
+Set `EXPO_ACCESS_TOKEN` (env or JVM property) to a valid token obtained via `npx expo push:access-token`.

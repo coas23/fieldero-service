@@ -12,6 +12,8 @@ import com.grash.repository.NotificationRepository;
 import com.grash.service.expo.AuthenticatedPushServerResolver;
 import io.github.jav.exposerversdk.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
@@ -134,8 +137,14 @@ public class NotificationService {
             try {
                 allTickets.addAll(messageReplyFuture.get());
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                log.error("Expo push future failed", e);
             }
+        }
+
+        if (allTickets.isEmpty()) {
+            log.error("Expo push request returned zero tickets (tokens count={}, title={}). Raw response might have failed.",
+                    tokens.size(), title);
+            return;
         }
 
         List<ExpoPushMessageTicketPair<ExpoPushMessage>> zippedMessagesTickets =
@@ -146,23 +155,16 @@ public class NotificationService {
         String okTicketMessagesString = okTicketMessages.stream().map(
                 p -> "Title: " + p.message.getTitle() + ", Id:" + p.ticket.getId()
         ).collect(Collectors.joining(","));
-        System.out.println(
-                "Recieved OK ticket for " +
-                        okTicketMessages.size() +
-                        " messages: " + okTicketMessagesString
-        );
+        log.debug("Received OK tickets for {} messages: {}", okTicketMessages.size(), okTicketMessagesString);
 
         List<ExpoPushMessageTicketPair<ExpoPushMessage>> errorTicketMessages =
                 client.filterAllMessagesWithError(zippedMessagesTickets);
-        String errorTicketMessagesString = errorTicketMessages.stream().map(
-                p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
-        ).collect(Collectors.joining(","));
-        System.out.println(
-                "Recieved ERROR ticket for " +
-                        errorTicketMessages.size() +
-                        " messages: " +
-                        errorTicketMessagesString
-        );
+        if (!errorTicketMessages.isEmpty()) {
+            String errorTicketMessagesString = errorTicketMessages.stream().map(
+                    p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
+            ).collect(Collectors.joining(","));
+            log.warn("Expo push returned {} error tickets: {}", errorTicketMessages.size(), errorTicketMessagesString);
+        }
 
 
         // TODO

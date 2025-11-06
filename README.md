@@ -1,4 +1,4 @@
-# Atlas CMMS API
+# Fieldero-Service
 
 This is the REST backend (Java8-Spring Boot) of the web
 application.
@@ -14,5 +14,11 @@ to [src/main/resources/application-dev.yml](src/main/resources/application-dev.y
 password.
 
 ```shell
+set -a
+source .env
+set +a
+env | grep DB_
+JAVA_HOME=$(/usr/libexec/java_home -v 1.8) \
+PATH="$JAVA_HOME/bin:$PATH" \
 mvn spring-boot:run
 ```

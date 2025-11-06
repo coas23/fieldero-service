@@ -6,7 +6,9 @@ RUN mvn clean package -DskipTests
 
 
 # Runtime Stage
-FROM openjdk:8-jdk-alpine
+# Alpine-based OpenJDK 8 images were removed from Docker Hub.
+# Use the Temurin JRE 8 image instead to keep the runtime lean.
+FROM eclipse-temurin:8-jre
 
 # Set the working directory in the container
 WORKDIR /app

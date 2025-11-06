@@ -9,7 +9,6 @@ import com.grash.model.Notification;
 import com.grash.model.OwnUser;
 import com.grash.model.PushNotificationToken;
 import com.grash.repository.NotificationRepository;
-import com.grash.service.expo.AuthenticatedPushServerResolver;
 import io.github.jav.exposerversdk.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -114,10 +113,7 @@ public class NotificationService {
         List<ExpoPushMessage> expoPushMessages = new ArrayList<>();
         expoPushMessages.add(expoPushMessage);
 
-        PushClientCustomData client = new PushClientCustomData();
-        String expoAccessToken = Optional.ofNullable(System.getenv("EXPO_ACCESS_TOKEN"))
-                .orElseGet(() -> System.getProperty("EXPO_ACCESS_TOKEN", ""));
-        client.pushServerResolver = new AuthenticatedPushServerResolver(expoAccessToken);
+        PushClient client = new PushClient();
         List<List<ExpoPushMessage>> chunks = client.chunkPushNotifications(expoPushMessages);
 
         List<CompletableFuture<List<ExpoPushTicket>>> messageRepliesFutures = new ArrayList<>();
@@ -152,17 +148,15 @@ public class NotificationService {
 
         List<ExpoPushMessageTicketPair<ExpoPushMessage>> errorTicketMessages =
                 client.filterAllMessagesWithError(zippedMessagesTickets);
-        if (!errorTicketMessages.isEmpty()) {
-            String errorTicketMessagesString = errorTicketMessages.stream().map(
-                    p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
-            ).collect(Collectors.joining(","));
-            System.out.println(
-                    "Recieved ERROR ticket for " +
-                            errorTicketMessages.size() +
-                            " messages: " +
-                            errorTicketMessagesString
-            );
-        }
+        String errorTicketMessagesString = errorTicketMessages.stream().map(
+                p -> "Title: " + p.message.getTitle() + ", Error: " + p.ticket.getDetails().getError()
+        ).collect(Collectors.joining(","));
+        System.out.println(
+                "Recieved ERROR ticket for " +
+                        errorTicketMessages.size() +
+                        " messages: " +
+                        errorTicketMessagesString
+        );
 
 
         // TODO

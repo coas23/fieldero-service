@@ -18,9 +18,11 @@ set -a
 source .env
 set +a
 env | grep DB_
-JAVA_HOME=$(/usr/libexec/java_home -v 1.8) \
+
+JAVA_HOME=$(/usr/libexec/java_home -v 17) \
 PATH="$JAVA_HOME/bin:$PATH" \
 mvn spring-boot:run
+
 ```
 ## Expo Push Notifications
 

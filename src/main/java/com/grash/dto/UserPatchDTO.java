@@ -5,6 +5,8 @@ import com.grash.model.Location;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 public class UserPatchDTO {
@@ -24,4 +26,12 @@ public class UserPatchDTO {
     private File image;
 
     private String newPassword;
+
+    private List<UserWorkingHourDTO> workingHours;
+
+    private Long supervisorId;
+
+    private Boolean supervisorIdSpecified;
+
+    private UserSchedulingLocationDTO schedulingLocation;
 }

@@ -143,6 +143,21 @@ public class OwnUser extends Audit {
     @JsonIgnore
     private SuperAccountRelation parentSuperAccount;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dayOfWeek ASC")
+    private List<UserWorkingHour> workingHours = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private OwnUser supervisor;
+
+    private String schedulingAddress;
+    private String schedulingPostalCode;
+    private String schedulingCity;
+    private String schedulingCountry;
+    private Double schedulingLatitude;
+    private Double schedulingLongitude;
+
     // SSO fields
     private String ssoProvider;
     private String ssoProviderId;
@@ -166,4 +181,3 @@ public class OwnUser extends Audit {
     }
 
 }
-

@@ -5,12 +5,14 @@ import com.grash.advancedsearch.SpecificationBuilder;
 import com.grash.dto.SignupSuccessResponse;
 import com.grash.dto.SuccessResponse;
 import com.grash.dto.UserPatchDTO;
+import com.grash.dto.UserSchedulingLocationDTO;
 import com.grash.dto.UserSignupRequest;
 import com.grash.exception.CustomException;
 import com.grash.mapper.UserMapper;
 import com.grash.model.*;
 import com.grash.model.enums.RoleCode;
 import com.grash.repository.UserRepository;
+import com.grash.repository.UserWorkingHourRepository;
 import com.grash.repository.VerificationTokenRepository;
 import com.grash.security.JwtTokenProvider;
 import com.grash.utils.Helper;
@@ -35,6 +37,7 @@ import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -58,6 +61,7 @@ public class UserService {
     private final SubscriptionPlanService subscriptionPlanService;
     private final SubscriptionService subscriptionService;
     private final UserMapper userMapper;
+    private final UserWorkingHourRepository userWorkingHourRepository;
     private final BrandingService brandingService;
 
     @Value("${api.host}")
@@ -193,7 +197,9 @@ public class UserService {
     }
 
     public Optional<OwnUser> findByIdAndCompany(Long id, Long companyId) {
-        return userRepository.findByIdAndCompany_Id(id, companyId);
+        Optional<OwnUser> result = userRepository.findByIdAndCompany_Id(id, companyId);
+        result.ifPresent(this::initializeWorkingHours);
+        return result;
     }
 
     public OwnUser whoami(HttpServletRequest req) {
@@ -251,7 +257,9 @@ public class UserService {
     }
 
     public Collection<OwnUser> findByCompany(Long id) {
-        return userRepository.findByCompany_Id(id);
+        Collection<OwnUser> users = userRepository.findByCompany_Id(id);
+        users.forEach(this::initializeWorkingHours);
+        return users;
     }
 
     public Collection<OwnUser> findWorkersByCompany(Long id) {
@@ -259,7 +267,9 @@ public class UserService {
     }
 
     public Collection<OwnUser> findByLocation(Long id) {
-        return userRepository.findByLocation_Id(id);
+        Collection<OwnUser> users = userRepository.findByLocation_Id(id);
+        users.forEach(this::initializeWorkingHours);
+        return users;
     }
 
     private void throwIfEmailNotificationsNotEnabled() {
@@ -297,8 +307,52 @@ public class UserService {
 
                 savedUser.setPassword(passwordEncoder.encode(userReq.getNewPassword()));
             }
+            if (userReq.getWorkingHours() != null) {
+                userWorkingHourRepository.deleteByUser_Id(savedUser.getId());
+                List<UserWorkingHour> newHours = userReq.getWorkingHours().stream()
+                        .filter(wh -> wh.getDayOfWeek() != null)
+                        .map(workingHourDTO -> {
+                            UserWorkingHour workingHour = new UserWorkingHour();
+                            workingHour.setDayOfWeek(workingHourDTO.getDayOfWeek());
+                            workingHour.setStartTime(workingHourDTO.getStartTime());
+                            workingHour.setEndTime(workingHourDTO.getEndTime());
+                            workingHour.setBreakMinutes(workingHourDTO.getBreakMinutes() == null ? 0 : workingHourDTO.getBreakMinutes());
+                            workingHour.setUser(savedUser);
+                            return workingHour;
+                        })
+                        .collect(Collectors.toList());
+                userWorkingHourRepository.saveAll(newHours);
+                if (savedUser.getWorkingHours() == null) {
+                    savedUser.setWorkingHours(new ArrayList<>());
+                } else {
+                    savedUser.getWorkingHours().clear();
+                }
+                savedUser.getWorkingHours().addAll(newHours);
+            }
+            if (Boolean.TRUE.equals(userReq.getSupervisorIdSpecified())) {
+                if (userReq.getSupervisorId() != null) {
+                    if (userReq.getSupervisorId().equals(savedUser.getId())) {
+                        throw new CustomException("User cannot be their own supervisor", HttpStatus.NOT_ACCEPTABLE);
+                    }
+                    Optional<OwnUser> supervisor = userRepository.findByIdAndCompany_Id(userReq.getSupervisorId(), savedUser.getCompany().getId());
+                    supervisor.ifPresent(savedUser::setSupervisor);
+                    supervisor.orElseThrow(() -> new CustomException("Supervisor not found", HttpStatus.NOT_FOUND));
+                } else {
+                    savedUser.setSupervisor(null);
+                }
+            }
+            if (userReq.getSchedulingLocation() != null) {
+                UserSchedulingLocationDTO location = userReq.getSchedulingLocation();
+                savedUser.setSchedulingAddress(location.getAddress());
+                savedUser.setSchedulingPostalCode(location.getPostalCode());
+                savedUser.setSchedulingCity(location.getCity());
+                savedUser.setSchedulingCountry(location.getCountry());
+                savedUser.setSchedulingLatitude(location.getLatitude());
+                savedUser.setSchedulingLongitude(location.getLongitude());
+            }
             OwnUser updatedUser = userRepository.saveAndFlush(userMapper.updateUser(savedUser, userReq));
             em.refresh(updatedUser);
+            initializeWorkingHours(updatedUser);
             return updatedUser;
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }
@@ -326,12 +380,27 @@ public class UserService {
     }
 
 
+    private void initializeWorkingHours(OwnUser user) {
+        if (user == null) {
+            return;
+        }
+        List<UserWorkingHour> workingHours = userWorkingHourRepository.findByUser_Id(user.getId());
+        if (user.getWorkingHours() == null) {
+            user.setWorkingHours(new ArrayList<>());
+        } else {
+            user.getWorkingHours().clear();
+        }
+        user.getWorkingHours().addAll(workingHours);
+    }
+
     public Page<OwnUser> findBySearchCriteria(SearchCriteria searchCriteria) {
         SpecificationBuilder<OwnUser> builder = new SpecificationBuilder<>();
         searchCriteria.getFilterFields().forEach(builder::with);
         Pageable page = PageRequest.of(searchCriteria.getPageNum(), searchCriteria.getPageSize(),
                 searchCriteria.getDirection(), searchCriteria.getSortField());
-        return userRepository.findAll(builder.build(), page);
+        Page<OwnUser> users = userRepository.findAll(builder.build(), page);
+        users.forEach(this::initializeWorkingHours);
+        return users;
     }
 
     @Async

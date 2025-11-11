@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet id="user-supervisor-scheduling-location" author="codex">
+        <addColumn tableName="own_user">
+            <column name="supervisor_id" type="BIGINT"/>
+        </addColumn>
+        <addColumn tableName="own_user">
+            <column name="scheduling_address" type="VARCHAR(255)"/>
+            <column name="scheduling_postal_code" type="VARCHAR(50)"/>
+            <column name="scheduling_city" type="VARCHAR(150)"/>
+            <column name="scheduling_country" type="VARCHAR(150)"/>
+            <column name="scheduling_latitude" type="DOUBLE PRECISION"/>
+            <column name="scheduling_longitude" type="DOUBLE PRECISION"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="own_user" baseColumnNames="supervisor_id"
+                                 constraintName="fk_own_user_supervisor"
+                                 referencedTableName="own_user" referencedColumnNames="id"
+                                 deferrable="false" initiallyDeferred="false"/>
+        <createIndex tableName="own_user" indexName="idx_own_user_supervisor">
+            <column name="supervisor_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

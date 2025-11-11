@@ -150,4 +150,10 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_09_26_1700000000_cascade_delete_not_null.xml"
              relativeToChangelogFile="true"/>
+    <include file="changelog/2025_11_10_1759900000_user_working_hours.xml"
+             relativeToChangelogFile="true"/>
+    <include file="changelog/2025_11_10_1759902000_user_supervisor_sched_location.xml"
+             relativeToChangelogFile="true"/>
+    <include file="changelog/2025_11_15_1760000000_time_entries.xml"
+             relativeToChangelogFile="true"/>
 </databaseChangeLog>

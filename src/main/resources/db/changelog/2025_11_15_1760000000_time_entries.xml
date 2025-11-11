@@ -1,0 +1,59 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet id="2025_11_15_1760000000_time_entries" author="codex">
+        <createTable tableName="time_entry">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_time_entry"/>
+            </column>
+            <column name="company_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_by" type="BIGINT"/>
+            <column name="duration" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="time_entry"
+                                 baseColumnNames="company_id"
+                                 constraintName="fk_time_entry_company"
+                                 referencedTableName="company"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="time_entry"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_time_entry_user"
+                                 referencedTableName="own_user"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createIndex indexName="idx_time_entry_company" tableName="time_entry">
+            <column name="company_id"/>
+        </createIndex>
+        <createIndex indexName="idx_time_entry_user" tableName="time_entry">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_time_entry_started_at" tableName="time_entry">
+            <column name="started_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

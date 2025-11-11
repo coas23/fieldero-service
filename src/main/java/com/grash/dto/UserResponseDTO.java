@@ -53,4 +53,10 @@ public class UserResponseDTO {
 
     private Date lastLogin;
 
+    private List<UserWorkingHourDTO> workingHours = new ArrayList<>();
+
+    private UserMiniDTO supervisor;
+
+    private UserSchedulingLocationDTO schedulingLocation;
+
 }

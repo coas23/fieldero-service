@@ -34,6 +34,14 @@ public class TimeEntry extends Time {
     @NotNull
     private TimeStatus status = TimeStatus.STOPPED;
 
+    private Double startLatitude;
+
+    private Double startLongitude;
+
+    private Double endLatitude;
+
+    private Double endLongitude;
+
     public Date getEndedAt() {
         return getDuration() == 0 ? null : Helper.addSeconds(startedAt, Math.toIntExact(this.getDuration()));
     }

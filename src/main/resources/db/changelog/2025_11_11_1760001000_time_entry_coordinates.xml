@@ -1,0 +1,14 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <changeSet id="2025_11_11_1760001000_time_entry_coordinates" author="codex">
+        <addColumn tableName="time_entry">
+            <column name="start_latitude" type="DOUBLE"/>
+            <column name="start_longitude" type="DOUBLE"/>
+            <column name="end_latitude" type="DOUBLE"/>
+            <column name="end_longitude" type="DOUBLE"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -28,6 +28,7 @@ public class RoleService {
     public Role update(Long id, RolePatchDTO role) {
         if (roleRepository.existsById(id)) {
             Role savedRole = roleRepository.findById(id).get();
+            savedRole.setCustomized(true);
             return roleRepository.save(roleMapper.updateRole(savedRole, role));
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }

@@ -1,5 +1,6 @@
 package com.grash.controller;
 
+import com.grash.dto.timeTracking.TimeEntryLocationDTO;
 import com.grash.dto.timeTracking.TimeEntryPatchDTO;
 import com.grash.dto.timeTracking.TimeEntrySummaryDTO;
 import com.grash.exception.CustomException;
@@ -88,15 +89,16 @@ public class TimeEntryController {
     @PostMapping("/control")
     public TimeEntry controlTimer(
             HttpServletRequest req,
-            @RequestParam(defaultValue = "true") boolean start) {
+            @RequestParam(defaultValue = "true") boolean start,
+            @RequestBody(required = false) TimeEntryLocationDTO locationDTO) {
         OwnUser user = userService.whoami(req);
         ensureFeatureEnabled(user);
         if (start) {
-            return timeEntryService.startTimer(user);
+            return timeEntryService.startTimer(user, locationDTO);
         } else {
             TimeEntry runningEntry = timeEntryService.findRunningEntry(user.getId())
                     .orElseThrow(() -> new CustomException("No timer to stop", HttpStatus.NOT_FOUND));
-            return timeEntryService.stopTimer(runningEntry);
+            return timeEntryService.stopTimer(runningEntry, locationDTO);
         }
     }
 

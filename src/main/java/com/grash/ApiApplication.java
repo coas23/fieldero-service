@@ -114,6 +114,9 @@ public class ApiApplication implements CommandLineRunner {
 
         for (Role defaultRole : defaultRoles) {
             for (Role upToDateRole : upToDateRoles) {
+                if (defaultRole.isCustomized()) {
+                    break;
+                }
                 if (defaultRole.getCode().equals(upToDateRole.getCode())) {
                     if (!CollectionUtils.isEqualCollection(defaultRole.getCreatePermissions(),
                             upToDateRole.getCreatePermissions()) ||

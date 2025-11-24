@@ -52,6 +52,7 @@ public class Role {
     @ElementCollection(targetClass = PermissionEntity.class)
     private Set<PermissionEntity> deleteOtherPermissions = new HashSet<>();
 
+    private boolean customized = false;
 
     @ManyToOne
     @NotNull

@@ -1,5 +1,6 @@
 package com.grash.service;
 
+import com.grash.dto.timeTracking.TimeEntryLocationDTO;
 import com.grash.dto.timeTracking.TimeEntrySummaryDTO;
 import com.grash.exception.CustomException;
 import com.grash.mapper.FileMapper;
@@ -34,7 +35,7 @@ public class TimeEntryService {
     private final FileMapper fileMapper;
 
     @Transactional
-    public TimeEntry startTimer(OwnUser user) {
+    public TimeEntry startTimer(OwnUser user, TimeEntryLocationDTO location) {
         Optional<TimeEntry> existing = findRunningEntry(user.getId());
         if (existing.isPresent()) {
             return existing.get();
@@ -44,13 +45,21 @@ public class TimeEntryService {
         timeEntry.setStartedAt(new Date());
         timeEntry.setStatus(TimeStatus.RUNNING);
         timeEntry.setDuration(0);
+        if (location != null) {
+            timeEntry.setStartLatitude(location.getLatitude());
+            timeEntry.setStartLongitude(location.getLongitude());
+        }
         return timeEntryRepository.save(timeEntry);
     }
 
     @Transactional
-    public TimeEntry stopTimer(TimeEntry entry) {
+    public TimeEntry stopTimer(TimeEntry entry, TimeEntryLocationDTO location) {
         entry.setStatus(TimeStatus.STOPPED);
         entry.setDuration(entry.getDuration() + Helper.getDateDiff(entry.getStartedAt(), new Date(), TimeUnit.SECONDS));
+        if (location != null) {
+            entry.setEndLatitude(location.getLatitude());
+            entry.setEndLongitude(location.getLongitude());
+        }
         return timeEntryRepository.save(entry);
     }
 

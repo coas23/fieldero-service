@@ -1,14 +1,13 @@
-# Build Stage
-FROM maven:3.8.6-jdk-8 AS build
+# Build Stage (Java 17)
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
 
 
 # Runtime Stage
-# Alpine-based OpenJDK 8 images were removed from Docker Hub.
-# Use the Temurin JRE 8 image instead to keep the runtime lean.
-FROM eclipse-temurin:8-jre
+# Use Temurin JRE 17 for runtime
+FROM eclipse-temurin:17-jre
 
 # Set the working directory in the container
 WORKDIR /app

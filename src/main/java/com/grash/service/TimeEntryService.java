@@ -48,6 +48,9 @@ public class TimeEntryService {
         if (location != null) {
             timeEntry.setStartLatitude(location.getLatitude());
             timeEntry.setStartLongitude(location.getLongitude());
+            if (location.getComment() != null) {
+                timeEntry.setComment(location.getComment());
+            }
         }
         return timeEntryRepository.save(timeEntry);
     }
@@ -59,6 +62,9 @@ public class TimeEntryService {
         if (location != null) {
             entry.setEndLatitude(location.getLatitude());
             entry.setEndLongitude(location.getLongitude());
+            if (location.getComment() != null) {
+                entry.setComment(location.getComment());
+            }
         }
         return timeEntryRepository.save(entry);
     }

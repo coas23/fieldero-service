@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
+import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
@@ -41,6 +42,9 @@ public class TimeEntry extends Time {
     private Double endLatitude;
 
     private Double endLongitude;
+
+    @Column(length = 500)
+    private String comment;
 
     public Date getEndedAt() {
         return getDuration() == 0 ? null : Helper.addSeconds(startedAt, Math.toIntExact(this.getDuration()));

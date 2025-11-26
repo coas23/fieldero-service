@@ -160,4 +160,6 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_11_12_1760100000_role_customized_column.xml"
              relativeToChangelogFile="true"/>
+    <include file="changelog/2025_11_26_1761000000_time_entry_comment.xml"
+             relativeToChangelogFile="true"/>
 </databaseChangeLog>

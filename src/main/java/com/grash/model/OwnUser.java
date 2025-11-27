@@ -28,7 +28,7 @@ public class OwnUser extends Audit {
     @NotNull
     private String lastName;
 
-    private long rate;
+    private Double rate;
 
     @OneToOne(fetch = FetchType.LAZY)
     private File image;

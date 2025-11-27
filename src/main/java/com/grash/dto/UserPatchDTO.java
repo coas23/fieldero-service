@@ -15,7 +15,7 @@ public class UserPatchDTO {
 
     private String lastName;
 
-    private long rate;
+    private Double rate;
 
     private String phone;
 

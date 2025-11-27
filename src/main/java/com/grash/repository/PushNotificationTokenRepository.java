@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface PushNotificationTokenRepository extends JpaRepository<PushNotificationToken, Long> {
     Optional<PushNotificationToken> findByUser_Id(Long id);
+    void deleteByUser_Id(Long userId);
 }

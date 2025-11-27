@@ -12,6 +12,7 @@ import com.grash.mapper.UserMapper;
 import com.grash.model.*;
 import com.grash.model.enums.PermissionEntity;
 import com.grash.model.enums.RoleCode;
+import com.grash.service.PushNotificationTokenService;
 import com.grash.repository.UserRepository;
 import com.grash.repository.UserWorkingHourRepository;
 import com.grash.repository.VerificationTokenRepository;
@@ -64,6 +65,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final UserWorkingHourRepository userWorkingHourRepository;
     private final BrandingService brandingService;
+    private final PushNotificationTokenService pushNotificationTokenService;
 
     @Value("${api.host}")
     private String PUBLIC_API_URL;
@@ -204,6 +206,8 @@ public class UserService {
         if (requester.getId().equals(id)) {
             throw new CustomException("Cannot delete your own account", HttpStatus.FORBIDDEN);
         }
+        // Remove push notification token linked to user to avoid FK violations.
+        pushNotificationTokenService.deleteByUser(id);
         // Clear associations to avoid constraint issues.
         target.getTeams().forEach(team -> team.getUsers().remove(target));
         target.getAsset().forEach(asset -> asset.getUsers().remove(target));

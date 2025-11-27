@@ -29,4 +29,8 @@ public class PushNotificationTokenService {
     public void delete(Long id) {
         pushNotificationTokenRepository.deleteById(id);
     }
+
+    public void deleteByUser(Long userId) {
+        pushNotificationTokenRepository.deleteByUser_Id(userId);
+    }
 }

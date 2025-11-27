@@ -229,5 +229,15 @@ public class UserController {
             throw new CustomException("User not found", HttpStatus.NOT_FOUND);
         }
     }
-}
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"), //
+            @ApiResponse(code = 403, message = "Access denied"), //
+            @ApiResponse(code = 404, message = "User not found")})
+    public SuccessResponse delete(@ApiParam("id") @PathVariable("id") Long id,
+                                  @ApiIgnore @CurrentUser OwnUser requester) {
+        return userService.deleteByIdAndCompany(id, requester);
+    }
+}

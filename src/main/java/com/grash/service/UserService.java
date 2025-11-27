@@ -10,6 +10,7 @@ import com.grash.dto.UserSignupRequest;
 import com.grash.exception.CustomException;
 import com.grash.mapper.UserMapper;
 import com.grash.model.*;
+import com.grash.model.enums.PermissionEntity;
 import com.grash.model.enums.RoleCode;
 import com.grash.repository.UserRepository;
 import com.grash.repository.UserWorkingHourRepository;
@@ -186,6 +187,34 @@ public class UserService {
 
     public void delete(String username) {
         userRepository.deleteByUsername(username);
+    }
+
+    public SuccessResponse deleteByIdAndCompany(Long id, OwnUser requester) {
+        Optional<OwnUser> optionalUser = findByIdAndCompany(id, requester.getCompany().getId());
+        if (optionalUser.isEmpty()) {
+            throw new CustomException("User not found", HttpStatus.NOT_FOUND);
+        }
+        OwnUser target = optionalUser.get();
+        if (target.isOwnsCompany()) {
+            throw new CustomException("Cannot delete company owner", HttpStatus.FORBIDDEN);
+        }
+        if (!requester.getRole().getDeleteOtherPermissions().contains(PermissionEntity.PEOPLE_AND_TEAMS)) {
+            throw new CustomException("You don't have permission", HttpStatus.FORBIDDEN);
+        }
+        if (requester.getId().equals(id)) {
+            throw new CustomException("Cannot delete your own account", HttpStatus.FORBIDDEN);
+        }
+        // Clear associations to avoid constraint issues.
+        target.getTeams().forEach(team -> team.getUsers().remove(target));
+        target.getAsset().forEach(asset -> asset.getUsers().remove(target));
+        target.getLocations().forEach(location -> location.getUsers().remove(target));
+        target.getMeters().forEach(meter -> meter.getUsers().remove(target));
+        target.getParts().forEach(part -> part.getUsers().remove(target));
+        target.getPreventiveMaintenances().forEach(pm -> pm.getUsers().remove(target));
+        target.getWorkOrders().forEach(wo -> wo.getAssignedTo().remove(target));
+
+        userRepository.delete(target);
+        return new SuccessResponse(true, "User deleted");
     }
 
     public Optional<OwnUser> findByEmail(String email) {

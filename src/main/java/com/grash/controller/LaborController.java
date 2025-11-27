@@ -97,7 +97,7 @@ public class LaborController {
                         return laborService.save(labor);
                     }
                 } else {
-                    Labor labor = new Labor(user, user.getRate(), new Date(), optionalWorkOrder.get(), true, TimeStatus.RUNNING);
+                    Labor labor = new Labor(user, user.getRate() != null ? user.getRate().longValue() : 0L, new Date(), optionalWorkOrder.get(), true, TimeStatus.RUNNING);
                     return laborService.create(labor);
                 }
             } else {

@@ -6,6 +6,7 @@ import com.grash.exception.CustomException;
 import com.grash.mapper.FileMapper;
 import com.grash.model.OwnUser;
 import com.grash.model.TimeEntry;
+import com.grash.model.UserWorkingHour;
 import com.grash.model.enums.PermissionEntity;
 import com.grash.model.enums.TimeStatus;
 import com.grash.repository.TimeEntryRepository;
@@ -22,9 +23,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.DayOfWeek;
 
 @Service
 @RequiredArgsConstructor
@@ -74,7 +79,10 @@ public class TimeEntryService {
     }
 
     public Collection<TimeEntry> findEntriesForUser(Long userId, Date start, Date end) {
-        return timeEntryRepository.findByUser_IdAndStartedAtBetweenOrderByStartedAtAsc(userId, start, end);
+        Collection<TimeEntry> entries = timeEntryRepository.findByUser_IdAndStartedAtBetweenOrderByStartedAtAsc(userId, start, end);
+        Optional<OwnUser> user = userService.findById(userId);
+        if (user.isEmpty()) return entries;
+        return applyDailyBreak(entries, user.get());
     }
 
     public Collection<TimeEntrySummaryDTO> getSummary(Long companyId, Date start, Date end) {
@@ -95,19 +103,20 @@ public class TimeEntryService {
 
         return users.stream().map(user -> {
             List<TimeEntry> userEntries = entriesByUser.getOrDefault(user.getId(), Collections.emptyList());
+            List<TimeEntry> adjustedEntries = new java.util.ArrayList<>(applyDailyBreak(userEntries, user));
             TimeEntrySummaryDTO.TimeEntrySummaryDTOBuilder builder = TimeEntrySummaryDTO.builder()
                     .userId(user.getId())
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
                     .jobTitle(user.getJobTitle())
-                    .totalDurationSeconds(userEntries.stream().mapToLong(TimeEntry::getDuration).sum());
+                    .totalDurationSeconds(adjustedEntries.stream().mapToLong(TimeEntry::getDuration).sum());
 
             if (user.getImage() != null) {
                 builder.image(fileMapper.toShowDto(user.getImage()));
             }
 
-            if (!userEntries.isEmpty()) {
-                TimeEntry lastEntry = userEntries.get(userEntries.size() - 1);
+            if (!adjustedEntries.isEmpty()) {
+                TimeEntry lastEntry = adjustedEntries.get(adjustedEntries.size() - 1);
                 builder.lastEntryStart(lastEntry.getStartedAt());
                 builder.lastEntryEnd(lastEntry.getEndedAt());
             }
@@ -150,5 +159,41 @@ public class TimeEntryService {
 
     public boolean hasTimeTrackingPermission(OwnUser user) {
         return user.getRole().getViewPermissions().contains(PermissionEntity.TIME_TRACKING);
+    }
+
+    private Collection<TimeEntry> applyDailyBreak(Collection<TimeEntry> entries, OwnUser user) {
+        if (entries == null || entries.isEmpty()) return entries;
+        // Ensure working hours are initialized to read breakMinutes.
+        if (user.getWorkingHours() != null) {
+            user.getWorkingHours().size();
+        }
+        Map<DayOfWeek, Integer> breakByDay = new ConcurrentHashMap<>();
+        if (user.getWorkingHours() != null) {
+            for (UserWorkingHour wh : user.getWorkingHours()) {
+                breakByDay.put(wh.getDayOfWeek(), wh.getBreakMinutes() == null ? 0 : wh.getBreakMinutes());
+            }
+        }
+
+        Map<LocalDate, List<TimeEntry>> byDate = entries.stream()
+                .collect(Collectors.groupingBy(te -> te.getStartedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
+
+        for (Map.Entry<LocalDate, List<TimeEntry>> dayEntry : byDate.entrySet()) {
+            LocalDate date = dayEntry.getKey();
+            List<TimeEntry> dayEntries = dayEntry.getValue();
+            long totalSeconds = dayEntries.stream().mapToLong(TimeEntry::getDuration).sum();
+            if (totalSeconds <= 6 * 3600) continue;
+            int breakMinutes = breakByDay.getOrDefault(date.getDayOfWeek(), 0);
+            if (breakMinutes <= 0) continue;
+            long breakSeconds = breakMinutes * 60L;
+            // Apply break to the first completed entry of the day.
+            for (TimeEntry entry : dayEntries) {
+                if (entry.getDuration() > 0 && entry.getStatus() == TimeStatus.STOPPED) {
+                    long newDuration = Math.max(0, entry.getDuration() - breakSeconds);
+                    entry.setDuration(newDuration);
+                    break;
+                }
+            }
+        }
+        return entries;
     }
 }

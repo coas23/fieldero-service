@@ -166,4 +166,6 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_11_27_1761100001_user_rate_double.xml"
              relativeToChangelogFile="true"/>
+    <include file="changelog/2025_11_27_1761100002_user_rate_nullable.xml"
+             relativeToChangelogFile="true"/>
 </databaseChangeLog>

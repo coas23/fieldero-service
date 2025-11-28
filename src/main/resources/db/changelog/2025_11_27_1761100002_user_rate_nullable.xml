@@ -1,0 +1,12 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- Allow null/optional rate on users to avoid insert constraint violations after type change -->
+    <changeSet id="2025_11_27_1761100002_user_rate_nullable" author="codex">
+        <dropNotNullConstraint tableName="own_user" columnName="rate" columnDataType="double precision"/>
+        <addDefaultValue tableName="own_user" columnName="rate" defaultValueNumeric="0" columnDataType="double precision"/>
+    </changeSet>
+
+</databaseChangeLog>

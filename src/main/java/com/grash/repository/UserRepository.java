@@ -27,6 +27,17 @@ public interface UserRepository extends JpaRepository<OwnUser, Long>, JpaSpecifi
 
     Collection<OwnUser> findByCompany_Id(Long id);
 
+    org.springframework.data.domain.Page<OwnUser> findByCompany_Id(Long id, org.springframework.data.domain.Pageable pageable);
+
+    @Query("select u from OwnUser u where u.company.id=:companyId and (" +
+            "lower(u.firstName) like lower(concat('%', :query, '%')) or " +
+            "lower(u.lastName) like lower(concat('%', :query, '%')) or " +
+            "lower(concat(u.firstName, ' ', u.lastName)) like lower(concat('%', :query, '%'))" +
+            ")")
+    org.springframework.data.domain.Page<OwnUser> searchByCompanyAndName(@Param("companyId") Long companyId,
+                                                                         @Param("query") String query,
+                                                                         org.springframework.data.domain.Pageable pageable);
+
     Collection<OwnUser> findByLocation_Id(Long id);
 
     Optional<OwnUser> findByEmailIgnoreCaseAndCompany_Id(String email, Long companyId);

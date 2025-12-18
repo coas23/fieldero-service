@@ -291,8 +291,19 @@ public class UserService {
 
     public Collection<OwnUser> findByCompany(Long id) {
         Collection<OwnUser> users = userRepository.findByCompany_Id(id);
-        users.forEach(this::initializeWorkingHours);
+        initializeWorkingHours(users);
         return users;
+    }
+
+    public org.springframework.data.domain.Page<OwnUser> findByCompanyPaged(Long id, org.springframework.data.domain.Pageable pageable, String search) {
+        org.springframework.data.domain.Page<OwnUser> page;
+        if (search != null && !search.trim().isEmpty()) {
+            page = userRepository.searchByCompanyAndName(id, search.trim(), pageable);
+        } else {
+            page = userRepository.findByCompany_Id(id, pageable);
+        }
+        initializeWorkingHours(page.getContent());
+        return page;
     }
 
     public Collection<OwnUser> findWorkersByCompany(Long id) {
@@ -414,16 +425,29 @@ public class UserService {
 
 
     private void initializeWorkingHours(OwnUser user) {
-        if (user == null) {
-            return;
-        }
-        List<UserWorkingHour> workingHours = userWorkingHourRepository.findByUser_Id(user.getId());
-        if (user.getWorkingHours() == null) {
-            user.setWorkingHours(new ArrayList<>());
-        } else {
-            user.getWorkingHours().clear();
-        }
-        user.getWorkingHours().addAll(workingHours);
+        if (user == null) return;
+        initializeWorkingHours(Collections.singletonList(user));
+    }
+
+    private void initializeWorkingHours(Collection<OwnUser> users) {
+        if (users == null || users.isEmpty()) return;
+        List<Long> userIds = users.stream()
+                .filter(Objects::nonNull)
+                .map(OwnUser::getId)
+                .collect(Collectors.toList());
+        if (userIds.isEmpty()) return;
+        Map<Long, List<UserWorkingHour>> hoursByUser = userWorkingHourRepository.findByUser_IdIn(userIds)
+                .stream()
+                .collect(Collectors.groupingBy(wh -> wh.getUser().getId()));
+        users.forEach(u -> {
+            List<UserWorkingHour> hours = hoursByUser.getOrDefault(u.getId(), Collections.emptyList());
+            if (u.getWorkingHours() == null) {
+                u.setWorkingHours(new ArrayList<>());
+            } else {
+                u.getWorkingHours().clear();
+            }
+            u.getWorkingHours().addAll(hours);
+        });
     }
 
     public Page<OwnUser> findBySearchCriteria(SearchCriteria searchCriteria) {

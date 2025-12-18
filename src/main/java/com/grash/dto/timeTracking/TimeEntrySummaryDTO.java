@@ -23,4 +23,7 @@ public class TimeEntrySummaryDTO {
     private Date lastEntryStart;
     private Date lastEntryEnd;
     private long totalDurationSeconds;
+    private long grossDurationSeconds;
+    private long breakDurationSeconds;
+    private long todayDurationSeconds;
 }

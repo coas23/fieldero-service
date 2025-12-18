@@ -1,0 +1,15 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="2025_12_01_1762000000_time_entry_indexes" author="codex">
+        <createIndex tableName="time_entry" indexName="idx_time_entry_company_started_at">
+            <column name="company_id"/>
+            <column name="started_at"/>
+        </createIndex>
+        <createIndex tableName="time_entry" indexName="idx_time_entry_user_started_at">
+            <column name="user_id"/>
+            <column name="started_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

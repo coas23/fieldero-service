@@ -3,6 +3,7 @@ package com.grash.controller;
 import com.grash.dto.timeTracking.TimeEntryLocationDTO;
 import com.grash.dto.timeTracking.TimeEntryPatchDTO;
 import com.grash.dto.timeTracking.TimeEntrySummaryDTO;
+import com.grash.dto.timeTracking.TimeEntrySummaryPageDTO;
 import com.grash.exception.CustomException;
 import com.grash.model.OwnUser;
 import com.grash.model.TimeEntry;
@@ -48,13 +49,16 @@ public class TimeEntryController {
     private final UserService userService;
 
     @GetMapping("/summary")
-    public Collection<TimeEntrySummaryDTO> getSummary(
+    public TimeEntrySummaryPageDTO getSummary(
             HttpServletRequest req,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date start,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date end) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date end,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
         OwnUser user = userService.whoami(req);
         ensureCanAccess(user);
-        return timeEntryService.getSummary(user.getCompany().getId(), resolveStart(start), resolveEnd(end));
+        return timeEntryService.getSummary(user.getCompany().getId(), resolveStart(start), resolveEnd(end), page, size, search);
     }
 
     @GetMapping("/user/{id}")

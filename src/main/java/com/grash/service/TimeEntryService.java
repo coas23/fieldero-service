@@ -2,6 +2,7 @@ package com.grash.service;
 
 import com.grash.dto.timeTracking.TimeEntryLocationDTO;
 import com.grash.dto.timeTracking.TimeEntrySummaryDTO;
+import com.grash.dto.timeTracking.TimeEntrySummaryPageDTO;
 import com.grash.exception.CustomException;
 import com.grash.mapper.FileMapper;
 import com.grash.model.OwnUser;
@@ -12,6 +13,10 @@ import com.grash.model.enums.TimeStatus;
 import com.grash.repository.TimeEntryRepository;
 import com.grash.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,9 +50,11 @@ public class TimeEntryService {
         if (existing.isPresent()) {
             return existing.get();
         }
+        // Beim Start nie in die Zukunft runden, sonst läuft der Timer negativ.
+        Date startedAt = roundToFiveMinutes(new Date(), true);
         TimeEntry timeEntry = new TimeEntry();
         timeEntry.setUser(user);
-        timeEntry.setStartedAt(new Date());
+        timeEntry.setStartedAt(startedAt);
         timeEntry.setStatus(TimeStatus.RUNNING);
         timeEntry.setDuration(0);
         if (location != null) {
@@ -63,7 +70,15 @@ public class TimeEntryService {
     @Transactional
     public TimeEntry stopTimer(TimeEntry entry, TimeEntryLocationDTO location) {
         entry.setStatus(TimeStatus.STOPPED);
-        entry.setDuration(entry.getDuration() + Helper.getDateDiff(entry.getStartedAt(), new Date(), TimeUnit.SECONDS));
+        Date roundedStart = roundToFiveMinutes(entry.getStartedAt(), true);
+        Date roundedEnd = roundToFiveMinutes(new Date(), false);
+        if (roundedEnd.before(roundedStart)) {
+            // Fallback: Endzeit nicht vor Startzeit
+            roundedEnd = roundedStart;
+        }
+        entry.setStartedAt(roundedStart);
+        long roundedSeconds = Math.max(0, Helper.getDateDiff(roundedStart, roundedEnd, TimeUnit.SECONDS));
+        entry.setDuration(roundedSeconds);
         if (location != null) {
             entry.setEndLatitude(location.getLatitude());
             entry.setEndLongitude(location.getLongitude());
@@ -79,16 +94,16 @@ public class TimeEntryService {
     }
 
     public Collection<TimeEntry> findEntriesForUser(Long userId, Date start, Date end) {
-        Collection<TimeEntry> entries = timeEntryRepository.findByUser_IdAndStartedAtBetweenOrderByStartedAtAsc(userId, start, end);
-        Optional<OwnUser> user = userService.findById(userId);
-        if (user.isEmpty()) return entries;
-        return applyDailyBreak(entries, user.get());
+        return timeEntryRepository.findByUser_IdAndStartedAtBetweenOrderByStartedAtAsc(userId, start, end);
     }
 
-    public Collection<TimeEntrySummaryDTO> getSummary(Long companyId, Date start, Date end) {
-        Collection<OwnUser> users = userService.findByCompany(companyId);
+    public TimeEntrySummaryPageDTO getSummary(Long companyId, Date start, Date end, int page, int size, String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").ascending().and(Sort.by("lastName").ascending()));
+        Page<OwnUser> usersPage = userService.findByCompanyPaged(companyId, pageable, search);
+        List<Long> userIds = usersPage.getContent().stream().map(OwnUser::getId).collect(Collectors.toList());
+
         Map<Long, List<TimeEntry>> entriesByUser = timeEntryRepository
-                .findByCompany_IdAndStartedAtBetween(companyId, start, end)
+                .findByCompany_IdAndStartedAtBetweenAndUser_IdIn(companyId, start, end, userIds)
                 .stream()
                 .collect(Collectors.groupingBy(entry -> entry.getUser().getId(),
                         Collectors.collectingAndThen(Collectors.toList(), list -> {
@@ -97,26 +112,39 @@ public class TimeEntryService {
                         })));
 
         Map<Long, TimeEntry> runningEntries = timeEntryRepository
-                .findByCompany_IdAndStatus(companyId, TimeStatus.RUNNING)
+                .findByCompany_IdAndUser_IdInAndStatus(companyId, userIds, TimeStatus.RUNNING)
                 .stream()
                 .collect(Collectors.toMap(entry -> entry.getUser().getId(), Function.identity(), (entry, duplicate) -> entry));
 
-        return users.stream().map(user -> {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+
+        List<TimeEntrySummaryDTO> summaries = usersPage.stream().map(user -> {
             List<TimeEntry> userEntries = entriesByUser.getOrDefault(user.getId(), Collections.emptyList());
-            List<TimeEntry> adjustedEntries = new java.util.ArrayList<>(applyDailyBreak(userEntries, user));
+            long grossDurationSeconds = userEntries.stream().mapToLong(TimeEntry::getDuration).sum();
+            long breakDurationSeconds = computeBreakSeconds(userEntries, user);
+            long netDurationSeconds = Math.max(0, grossDurationSeconds - breakDurationSeconds);
+            long grossToday = userEntries.stream()
+                    .filter(te -> te.getStartedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().equals(today))
+                    .mapToLong(TimeEntry::getDuration)
+                    .sum();
+            long breakToday = computeBreakSecondsForDate(userEntries, user, today);
+            long netToday = Math.max(0, grossToday - breakToday);
             TimeEntrySummaryDTO.TimeEntrySummaryDTOBuilder builder = TimeEntrySummaryDTO.builder()
                     .userId(user.getId())
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
                     .jobTitle(user.getJobTitle())
-                    .totalDurationSeconds(adjustedEntries.stream().mapToLong(TimeEntry::getDuration).sum());
+                    .totalDurationSeconds(netDurationSeconds)
+                    .grossDurationSeconds(grossDurationSeconds)
+                    .breakDurationSeconds(breakDurationSeconds)
+                    .todayDurationSeconds(netToday);
 
             if (user.getImage() != null) {
                 builder.image(fileMapper.toShowDto(user.getImage()));
             }
 
-            if (!adjustedEntries.isEmpty()) {
-                TimeEntry lastEntry = adjustedEntries.get(adjustedEntries.size() - 1);
+            if (!userEntries.isEmpty()) {
+                TimeEntry lastEntry = userEntries.get(userEntries.size() - 1);
                 builder.lastEntryStart(lastEntry.getStartedAt());
                 builder.lastEntryEnd(lastEntry.getEndedAt());
             }
@@ -131,6 +159,11 @@ public class TimeEntryService {
 
             return builder.build();
         }).collect(Collectors.toList());
+
+        return TimeEntrySummaryPageDTO.builder()
+                .items(summaries)
+                .totalElements(usersPage.getTotalElements())
+                .build();
     }
 
     public OwnUser validateUserInCompany(Long userId, OwnUser requester) {
@@ -161,8 +194,24 @@ public class TimeEntryService {
         return user.getRole().getViewPermissions().contains(PermissionEntity.TIME_TRACKING);
     }
 
-    private Collection<TimeEntry> applyDailyBreak(Collection<TimeEntry> entries, OwnUser user) {
-        if (entries == null || entries.isEmpty()) return entries;
+    /**
+     * Rundet auf 5 Minuten. Wenn floorOnly=true, wird immer abgerundet (keine Zukunftszeit).
+     */
+    private Date roundToFiveMinutes(Date date, boolean floorOnly) {
+        if (date == null) return null;
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(date.getTime());
+        long remainder = seconds % 300;
+        long adjusted;
+        if (floorOnly) {
+            adjusted = seconds - remainder;
+        } else {
+            adjusted = remainder >= 150 ? seconds + (300 - remainder) : seconds - remainder;
+        }
+        return new Date(TimeUnit.SECONDS.toMillis(adjusted));
+    }
+
+    private long computeBreakSeconds(Collection<TimeEntry> entries, OwnUser user) {
+        if (entries == null || entries.isEmpty()) return 0L;
         // Ensure working hours are initialized to read breakMinutes.
         if (user.getWorkingHours() != null) {
             user.getWorkingHours().size();
@@ -177,23 +226,43 @@ public class TimeEntryService {
         Map<LocalDate, List<TimeEntry>> byDate = entries.stream()
                 .collect(Collectors.groupingBy(te -> te.getStartedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
 
+        long totalBreakSeconds = 0L;
         for (Map.Entry<LocalDate, List<TimeEntry>> dayEntry : byDate.entrySet()) {
             LocalDate date = dayEntry.getKey();
             List<TimeEntry> dayEntries = dayEntry.getValue();
             long totalSeconds = dayEntries.stream().mapToLong(TimeEntry::getDuration).sum();
             if (totalSeconds <= 6 * 3600) continue;
             int breakMinutes = breakByDay.getOrDefault(date.getDayOfWeek(), 0);
-            if (breakMinutes <= 0) continue;
-            long breakSeconds = breakMinutes * 60L;
-            // Apply break to the first completed entry of the day.
-            for (TimeEntry entry : dayEntries) {
-                if (entry.getDuration() > 0 && entry.getStatus() == TimeStatus.STOPPED) {
-                    long newDuration = Math.max(0, entry.getDuration() - breakSeconds);
-                    entry.setDuration(newDuration);
-                    break;
-                }
+            long breakSeconds = Math.max(0, breakMinutes) * 60L;
+            if (totalSeconds > 9 * 3600) {
+                breakSeconds += 15 * 60L;
+            }
+            totalBreakSeconds += Math.min(breakSeconds, totalSeconds);
+        }
+        return totalBreakSeconds;
+    }
+
+    private long computeBreakSecondsForDate(Collection<TimeEntry> entries, OwnUser user, LocalDate targetDate) {
+        if (entries == null || entries.isEmpty()) return 0L;
+        if (user.getWorkingHours() != null) {
+            user.getWorkingHours().size();
+        }
+        Map<DayOfWeek, Integer> breakByDay = new ConcurrentHashMap<>();
+        if (user.getWorkingHours() != null) {
+            for (UserWorkingHour wh : user.getWorkingHours()) {
+                breakByDay.put(wh.getDayOfWeek(), wh.getBreakMinutes() == null ? 0 : wh.getBreakMinutes());
             }
         }
-        return entries;
+        List<TimeEntry> dayEntries = entries.stream()
+                .filter(te -> te.getStartedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().equals(targetDate))
+                .collect(Collectors.toList());
+        long totalSeconds = dayEntries.stream().mapToLong(TimeEntry::getDuration).sum();
+        if (totalSeconds <= 6 * 3600) return 0L;
+        int breakMinutes = breakByDay.getOrDefault(targetDate.getDayOfWeek(), 0);
+        long breakSeconds = Math.max(0, breakMinutes) * 60L;
+        if (totalSeconds > 9 * 3600) {
+            breakSeconds += 15 * 60L;
+        }
+        return Math.min(breakSeconds, totalSeconds);
     }
 }

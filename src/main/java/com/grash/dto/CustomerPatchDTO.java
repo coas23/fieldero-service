@@ -14,6 +14,16 @@ public class CustomerPatchDTO extends BasicInfos {
 
     private long rate;
 
+    private String city;
+
+    private String zip;
+
+    private String countryCode;
+
+    private String customerNumber;
+
+    private String vatNumber;
+
 
     private String billingName;
 

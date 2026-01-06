@@ -22,8 +22,6 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
 
     Integer countByParentAsset_Id(Long id);
 
-    List<Asset> findByLocation_Id(Long id);
-
     List<Asset> findByNameIgnoreCaseAndCompany_Id(String assetName, Long companyId);
 
     Optional<Asset> findByIdAndCompany_Id(Long id, Long companyId);
@@ -34,4 +32,3 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
 
     List<Asset> findByCompany_IdAndCreatedAtBefore(Long id, Date date);
 }
-

@@ -116,3 +116,8 @@ white-labeling:
   logo-paths: ${LOGO_PATHS:}
   custom-colors: ${CUSTOM_COLORS:}
   brand-config: ${BRAND_CONFIG:}
+integrations:
+  lexware:
+    encryption-key: ${LEXWARE_ENCRYPTION_KEY:}
+    base-url: ${LEXWARE_BASE_URL:}
+    customers-path: ${LEXWARE_CUSTOMERS_PATH:/contacts}

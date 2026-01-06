@@ -16,6 +16,16 @@ public class AssetMiniDTO {
 
     private Long parentId;
 
-    private Long locationId;
+    private String address;
+
+    private String city;
+
+    private String zip;
+
+    private String country;
+
+    private Double latitude;
+
+    private Double longitude;
 
 }

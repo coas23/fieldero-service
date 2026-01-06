@@ -28,7 +28,6 @@ public interface AssetMapper {
     AssetShowDTO toShowDto(Asset model, @Context AssetService assetService);
 
     @Mapping(target = "parentId", source = "parentAsset.id")
-    @Mapping(target = "locationId", source = "location.id")
     AssetMiniDTO toMiniDto(Asset model);
 
     @AfterMapping

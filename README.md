@@ -24,6 +24,8 @@ PATH="$JAVA_HOME/bin:$PATH" \
 mvn spring-boot:run
 
 ```
+
+- For storing the Lexware secret, set `LEXWARE_ENCRYPTION_KEY` to a strong 32+ character key so the value can be encrypted before persisting.
 ## Expo Push Notifications
 
 When using Expo project-bound push tokens the backend must supply an Expo Push Access Token.

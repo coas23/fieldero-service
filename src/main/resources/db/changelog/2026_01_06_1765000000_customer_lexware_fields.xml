@@ -1,0 +1,14 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="1765000000-1" author="codex">
+        <addColumn tableName="customer">
+            <column name="city" type="varchar(255)"/>
+            <column name="zip" type="varchar(50)"/>
+            <column name="country_code" type="varchar(20)"/>
+            <column name="customer_number" type="varchar(100)"/>
+            <column name="vat_number" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

@@ -8,16 +8,13 @@ import com.grash.dto.SuccessResponse;
 import com.grash.exception.CustomException;
 import com.grash.mapper.AssetMapper;
 import com.grash.model.Asset;
-import com.grash.model.Location;
 import com.grash.model.OwnUser;
 import com.grash.model.Part;
 import com.grash.model.enums.AssetStatus;
 import com.grash.model.enums.PermissionEntity;
-import com.grash.model.enums.RoleCode;
 import com.grash.model.enums.RoleType;
 import com.grash.security.CurrentUser;
 import com.grash.service.AssetService;
-import com.grash.service.LocationService;
 import com.grash.service.PartService;
 import com.grash.service.UserService;
 import com.grash.utils.Helper;
@@ -35,7 +32,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import javax.el.ELManager;
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -54,7 +50,6 @@ public class AssetController {
     private final AssetService assetService;
     private final AssetMapper assetMapper;
     private final UserService userService;
-    private final LocationService locationService;
     private final PartService partService;
     private final MessageSource messageSource;
     private final EntityManager em;
@@ -121,21 +116,6 @@ public class AssetController {
             } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
     }
-
-    @GetMapping("/location/{id}")
-    @PreAuthorize("permitAll()")
-    @ApiResponses(value = {//
-            @ApiResponse(code = 500, message = "Something went wrong"),
-            @ApiResponse(code = 403, message = "Access denied"),
-            @ApiResponse(code = 404, message = "Asset not found")})
-    public Collection<AssetShowDTO> getByLocation(@ApiParam("id") @PathVariable("id") Long id, HttpServletRequest req) {
-        OwnUser user = userService.whoami(req);
-        Optional<Location> optionalLocation = locationService.findById(id);
-        if (optionalLocation.isPresent()) {
-            return assetService.findByLocation(id).stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
-        } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
-    }
-
 
     @GetMapping("/part/{id}")
     @PreAuthorize("permitAll()")
@@ -259,12 +239,7 @@ public class AssetController {
     })
     public Collection<AssetMiniDTO> getMini(@RequestParam(required = false) Long locationId, HttpServletRequest req) {
         OwnUser user = userService.whoami(req);
-        List<Asset> assets = new ArrayList<>();
-        if (locationId == null) {
-            assets = assetService.findByCompany(user.getCompany().getId());
-        } else {
-            assets = assetService.findByLocation(locationId);
-        }
+        List<Asset> assets = assetService.findByCompany(user.getCompany().getId());
         return assets.stream().map(assetMapper::toMiniDto).collect(Collectors.toList());
     }
 

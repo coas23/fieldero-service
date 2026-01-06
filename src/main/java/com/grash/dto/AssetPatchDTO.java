@@ -15,8 +15,6 @@ public class AssetPatchDTO {
 
     private File image;
 
-    private Location location;
-
     private Asset parentAsset;
 
     private String area;
@@ -64,4 +62,16 @@ public class AssetPatchDTO {
     private String description;
 
     private Date inServiceDate;
+
+    private String address;
+
+    private String city;
+
+    private String zip;
+
+    private String country;
+
+    private Double latitude;
+
+    private Double longitude;
 }

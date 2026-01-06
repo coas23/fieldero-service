@@ -3,6 +3,7 @@ package com.grash.model;
 import com.grash.exception.CustomException;
 import com.grash.model.abstracts.CompanyAudit;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 
@@ -12,6 +13,7 @@ import java.util.Date;
 @Entity
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class Deprecation extends CompanyAudit {
     private long purchasePrice;
 

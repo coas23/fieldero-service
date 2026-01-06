@@ -32,6 +32,9 @@ public class CompanySettings {
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "companySettings")
     private UiConfiguration uiConfiguration = new UiConfiguration(this);
+
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "companySettings")
+    private IntegrationSettings integrationSettings = new IntegrationSettings(this);
     @OneToOne
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Company company;

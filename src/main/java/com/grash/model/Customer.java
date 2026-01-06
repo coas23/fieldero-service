@@ -3,6 +3,7 @@ package com.grash.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.grash.model.abstracts.BasicInfos;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class Customer extends BasicInfos {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -23,6 +25,15 @@ public class Customer extends BasicInfos {
 
     private long rate;
 
+    private String city;
+
+    private String zip;
+
+    private String countryCode;
+
+    private String customerNumber;
+
+    private String vatNumber;
 
     private String billingName;
 

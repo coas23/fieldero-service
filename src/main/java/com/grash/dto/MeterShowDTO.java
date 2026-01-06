@@ -3,6 +3,7 @@ package com.grash.dto;
 import com.grash.dto.FileShowDTO;
 import com.grash.model.MeterCategory;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class MeterShowDTO extends AuditShowDTO {
 
     private String name;

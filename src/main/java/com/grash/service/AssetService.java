@@ -7,7 +7,19 @@ import com.grash.dto.AssetShowDTO;
 import com.grash.dto.imports.AssetImportDTO;
 import com.grash.exception.CustomException;
 import com.grash.mapper.AssetMapper;
-import com.grash.model.*;
+import com.grash.model.Asset;
+import com.grash.model.AssetCategory;
+import com.grash.model.AssetDowntime;
+import com.grash.model.Company;
+import com.grash.model.Customer;
+import com.grash.model.Deprecation;
+import com.grash.model.Labor;
+import com.grash.model.Notification;
+import com.grash.model.OwnUser;
+import com.grash.model.Part;
+import com.grash.model.Team;
+import com.grash.model.Vendor;
+import com.grash.model.WorkOrder;
 import com.grash.model.enums.AssetStatus;
 import com.grash.model.enums.NotificationType;
 import com.grash.repository.AssetRepository;
@@ -34,7 +46,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AssetService {
     private final AssetRepository assetRepository;
-    private LocationService locationService;
     private final FileService fileService;
     private final AssetCategoryService assetCategoryService;
     private final DeprecationService deprecationService;
@@ -53,10 +64,9 @@ public class AssetService {
     private final CustomSequenceService customSequenceService;
 
     @Autowired
-    public void setDeps(@Lazy LocationService locationService, @Lazy LaborService laborService,
+    public void setDeps(@Lazy LaborService laborService,
                         @Lazy WorkOrderService workOrderService
     ) {
-        this.locationService = locationService;
         this.laborService = laborService;
         this.workOrderService = workOrderService;
     }
@@ -134,10 +144,6 @@ public class AssetService {
                 locale);
         notificationService.createMultiple(oldAsset.getNewUsersToNotify(newAsset.getUsers()).stream().map(user ->
                 new Notification(message, user, NotificationType.ASSET, newAsset.getId())).collect(Collectors.toList()), true, title);
-    }
-
-    public List<Asset> findByLocation(Long id) {
-        return assetRepository.findByLocation_Id(id);
     }
 
     private void stopAssetDowntime(Asset asset) {
@@ -252,9 +258,7 @@ public class AssetService {
         asset.setPower(dto.getPower());
         asset.setCustomId(getAssetNumber(company));
         asset.setManufacturer(dto.getManufacturer());
-        Optional<Location> optionalLocation = locationService.findByNameIgnoreCaseAndCompany(dto.getLocationName(),
-                companyId).stream().findFirst();
-        optionalLocation.ifPresent(asset::setLocation);
+        asset.setAddress(dto.getLocationName());
         Optional<Asset> optionalAsset =
                 findByNameIgnoreCaseAndCompany(dto.getParentAssetName(), companyId).stream().findFirst();
         optionalAsset.ifPresent(asset::setParentAsset);

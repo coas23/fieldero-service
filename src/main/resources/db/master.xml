@@ -170,4 +170,10 @@
              relativeToChangelogFile="true"/>
     <include file="changelog/2025_12_01_1762000000_time_entry_indexes.xml"
              relativeToChangelogFile="true"/>
+    <include file="changelog/2025_12_15_1763000000_integration_settings.xml"
+             relativeToChangelogFile="true"/>
+    <include file="changelog/2026_01_06_1765000000_customer_lexware_fields.xml"
+             relativeToChangelogFile="true"/>
+    <include file="changelog/2026_01_07_1765200001_asset_address_fields.xml"
+             relativeToChangelogFile="true"/>
 </databaseChangeLog>

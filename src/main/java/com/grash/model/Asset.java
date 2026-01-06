@@ -7,8 +7,6 @@ import com.grash.model.enums.AssetStatus;
 import com.grash.utils.Helper;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -32,10 +30,6 @@ public class Asset extends CompanyAudit {
     private File image;
 
     @ManyToOne
-    private Location location;
-
-    @ManyToOne
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Asset parentAsset;
 
     private String area;
@@ -142,6 +136,18 @@ public class Asset extends CompanyAudit {
 
     private String manufacturer;
 
+    private String address;
+
+    private String city;
+
+    private String zip;
+
+    private String country;
+
+    private Double latitude;
+
+    private Double longitude;
+
     public Collection<OwnUser> getUsers() {
         Collection<OwnUser> users = new ArrayList<>();
         if (this.getPrimaryUser() != null) {
@@ -176,6 +182,5 @@ public class Asset extends CompanyAudit {
         return this.inServiceDate == null ? this.getCreatedAt() : this.inServiceDate;
     }
 }
-
 
 

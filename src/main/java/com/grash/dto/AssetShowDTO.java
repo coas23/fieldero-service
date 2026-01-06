@@ -23,8 +23,6 @@ public class AssetShowDTO extends AuditShowDTO {
 
     private FileShowDTO image;
 
-    private LocationMiniDTO location;
-
     private AssetMiniDTO parentAsset;
 
     private String area;
@@ -70,4 +68,16 @@ public class AssetShowDTO extends AuditShowDTO {
     private String manufacturer;
 
     private String customId;
+
+    private String address;
+
+    private String city;
+
+    private String zip;
+
+    private String country;
+
+    private Double latitude;
+
+    private Double longitude;
 }
